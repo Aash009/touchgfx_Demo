@@ -41,5 +41,5 @@ jobs:
           uv tool install pre-commit
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Run pre-commit (format + MISRA lint)
+      - name: Run pre-commit (format + MISRA lint + unit tests)
         run: pre-commit run --all-files

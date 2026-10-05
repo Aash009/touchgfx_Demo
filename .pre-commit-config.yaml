@@ -40,3 +40,10 @@ repos:
         # hook should run at all, trading a bit of commit-time speed for
         # cross-TU correctness.
         pass_filenames: false
+      - id: unit-tests
+        name: Host unit tests
+        entry: scripts/unit-test.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        require_serial: true

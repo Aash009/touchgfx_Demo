@@ -27,14 +27,10 @@ fi
 # primary path everywhere. Advisory only, on every platform.
 command -v bear >/dev/null 2>&1 || optional_missing+=("bear")
 
-# pre-commit itself is bootstrapped on demand by install-hooks.sh via
-# whichever of these is available -- either is fine, no preference enforced.
-if ! command -v uv >/dev/null 2>&1 && ! command -v pip3 >/dev/null 2>&1 && ! command -v pip >/dev/null 2>&1; then
-    missing+=("uv-or-pip (needed to bootstrap pre-commit)")
-fi
+command -v uv >/dev/null 2>&1 || missing+=("uv (required to install pre-commit)")
 
 if [ "${#missing[@]}" -eq 0 ]; then
-    echo "MISRA toolchain: required tools found and the host compiler passed its compile/link check."
+    echo "MISRA toolchain: required tools found (including uv) and the host compiler passed its compile/link check."
     if [ "${#optional_missing[@]}" -gt 0 ]; then
         echo "Optional: ${optional_missing[*]} not found -- only needed as a compile_commands.json"
         echo "fallback for old STM32CubeIDE versions without the native export checkbox. Not"
