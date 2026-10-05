@@ -9,7 +9,24 @@ optional_missing=()
 
 command -v cppcheck >/dev/null 2>&1 || missing+=("cppcheck")
 command -v clang-tidy >/dev/null 2>&1 || missing+=("clang-tidy")
-command -v clang-format >/dev/null 2>&1 || missing+=("clang-format")
+CLANG_FORMAT_MINIMUM="23.1.2"
+if ! command -v clang-format >/dev/null 2>&1; then
+    missing+=("clang-format>=$CLANG_FORMAT_MINIMUM")
+else
+    clang_format_version="$(clang-format --version)"
+    if [[ "$clang_format_version" =~ version[[:space:]]+([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+        clang_format_major="${BASH_REMATCH[1]}"
+        clang_format_minor="${BASH_REMATCH[2]}"
+        clang_format_patch="${BASH_REMATCH[3]}"
+        if (( clang_format_major < 23 ||
+              (clang_format_major == 23 && clang_format_minor < 1) ||
+              (clang_format_major == 23 && clang_format_minor == 1 && clang_format_patch < 2) )); then
+            missing+=("clang-format>=$CLANG_FORMAT_MINIMUM (found: $clang_format_version)")
+        fi
+    else
+        missing+=("clang-format>=$CLANG_FORMAT_MINIMUM (unrecognized version: $clang_format_version)")
+    fi
+fi
 # unit-test.sh and gen_compile_db.sh (cmake --preset Debug) build with CMake + Ninja; ctest ships with cmake.
 command -v cmake >/dev/null 2>&1 || missing+=("cmake")
 source "$script_dir/resolve-ninja.sh"
@@ -62,6 +79,7 @@ case "$os_name" in
         echo "  winget install --id Kitware.CMake -e"
         echo "  winget install --id Ninja-build.Ninja -e"
         echo "  winget install --id astral-sh.uv -e"
+        echo "  uv tool install 'clang-format>=$CLANG_FORMAT_MINIMUM'"
         echo "  For host unit tests, also install Visual Studio Build Tools with the C++ workload and Windows SDK,"
         echo "  or MSYS2 MinGW-w64 GCC. LLVM Clang alone may not include Windows SDK libraries."
         echo "  No winget? Manual installers work too: https://cppcheck.sourceforge.io/"
