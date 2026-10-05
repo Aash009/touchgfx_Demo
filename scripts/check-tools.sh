@@ -2,6 +2,7 @@
 set -euo pipefail
 
 os_name="$(uname -s)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 missing=()
 optional_missing=()
@@ -11,7 +12,14 @@ command -v clang-tidy >/dev/null 2>&1 || missing+=("clang-tidy")
 command -v clang-format >/dev/null 2>&1 || missing+=("clang-format")
 # unit-test.sh and gen_compile_db.sh (cmake --preset Debug) build with CMake + Ninja; ctest ships with cmake.
 command -v cmake >/dev/null 2>&1 || missing+=("cmake")
-command -v ninja >/dev/null 2>&1 || missing+=("ninja")
+source "$script_dir/resolve-ninja.sh"
+resolve_ninja || missing+=("ninja")
+
+# Unit tests need a host compiler that can link native executables. Merely
+# finding clang is insufficient on Windows when the Windows SDK is missing.
+if ! "$script_dir/check-host-compiler.sh"; then
+    missing+=("host-compiler (compile/link check failed)")
+fi
 
 # bear (compile_commands.json fallback for old CubeIDE) has no solid native
 # Windows build, and isn't needed on any OS as long as CubeIDE's native
@@ -26,7 +34,7 @@ if ! command -v uv >/dev/null 2>&1 && ! command -v pip3 >/dev/null 2>&1 && ! com
 fi
 
 if [ "${#missing[@]}" -eq 0 ]; then
-    echo "MISRA toolchain: all required CLI tools found (cppcheck, clang-tidy, clang-format, cmake, ninja, uv/pip)."
+    echo "MISRA toolchain: required tools found and the host compiler passed its compile/link check."
     if [ "${#optional_missing[@]}" -gt 0 ]; then
         echo "Optional: ${optional_missing[*]} not found -- only needed as a compile_commands.json"
         echo "fallback for old STM32CubeIDE versions without the native export checkbox. Not"
@@ -58,6 +66,8 @@ case "$os_name" in
         echo "  winget install --id Kitware.CMake -e"
         echo "  winget install --id Ninja-build.Ninja -e"
         echo "  winget install --id astral-sh.uv -e"
+        echo "  For host unit tests, also install Visual Studio Build Tools with the C++ workload and Windows SDK,"
+        echo "  or MSYS2 MinGW-w64 GCC. LLVM Clang alone may not include Windows SDK libraries."
         echo "  No winget? Manual installers work too: https://cppcheck.sourceforge.io/"
         echo "  and https://releases.llvm.org/ -- make sure each ends up on PATH."
         echo "  (bear is not required on Windows -- use STM32CubeIDE's native"

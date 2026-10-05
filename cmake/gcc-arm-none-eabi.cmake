@@ -23,12 +23,27 @@ if(NOT CMAKE_C_COMPILER)
     if(ARM_GCC_EXECUTABLE)
         get_filename_component(ARM_TOOLCHAIN_BIN "${ARM_GCC_EXECUTABLE}" DIRECTORY)
         set(TOOLCHAIN_PREFIX "${ARM_TOOLCHAIN_BIN}/arm-none-eabi-")
+        # Preserve the exact executable found by CMake. Constructing this
+        # path from TOOLCHAIN_PREFIX drops .exe on Windows and can make CMake
+        # reject a compiler that is actually installed.
+        set(CMAKE_C_COMPILER "${ARM_GCC_EXECUTABLE}")
     endif()
-    set(CMAKE_C_COMPILER                ${TOOLCHAIN_PREFIX}gcc)
+    if(NOT CMAKE_C_COMPILER)
+        set(CMAKE_C_COMPILER "${TOOLCHAIN_PREFIX}gcc")
+    endif()
 endif()
 
 set(CMAKE_ASM_COMPILER              ${CMAKE_C_COMPILER})
-set(CMAKE_CXX_COMPILER              ${TOOLCHAIN_PREFIX}g++)
+if(NOT CMAKE_CXX_COMPILER)
+    find_program(ARM_GXX_EXECUTABLE "${TOOLCHAIN_PREFIX}g++"
+        PATHS "${ARM_TOOLCHAIN_BIN}"
+    )
+    if(ARM_GXX_EXECUTABLE)
+        set(CMAKE_CXX_COMPILER "${ARM_GXX_EXECUTABLE}")
+    else()
+        set(CMAKE_CXX_COMPILER "${TOOLCHAIN_PREFIX}g++")
+    endif()
+endif()
 set(CMAKE_LINKER                    ${TOOLCHAIN_PREFIX}g++)
 set(CMAKE_OBJCOPY                   ${TOOLCHAIN_PREFIX}objcopy)
 set(CMAKE_SIZE                      ${TOOLCHAIN_PREFIX}size)

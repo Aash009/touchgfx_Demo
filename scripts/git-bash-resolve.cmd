@@ -49,8 +49,13 @@ if errorlevel 1 (
 
 for /L %%i in (0,1,3) do (
     if exist "!CANDIDATES[%%i]!" (
-        "!CANDIDATES[%%i]!" %*
-        exit /b !ERRORLEVEL!
+        REM Standalone bash.exe does not always initialize Git's usr\bin
+        REM PATH entries. Put Git's own utilities first so commands such as
+        REM find and uname cannot resolve to unrelated Windows executables.
+        for %%B in ("!CANDIDATES[%%i]!") do set "PATH=%%~dpB..\usr\bin;%%~dpB;!PATH!"
+        "!CANDIDATES[%%i]!" --login %*
+        set "BASH_EXIT=!ERRORLEVEL!"
+        goto :return_bash_exit
     )
 )
 
@@ -58,3 +63,6 @@ echo ERROR: bash.exe not found in any known Git for Windows install location. 1>
 echo   Checked: %PF%\Git\bin, %PF86%\Git\bin, %LAD%\Programs\Git\bin, %UP%\scoop\apps\git\current\bin 1>&2
 echo   Add your install path to scripts\git-bash-resolve.cmd's CANDIDATES list. 1>&2
 exit /b 1
+
+:return_bash_exit
+exit /b !BASH_EXIT!

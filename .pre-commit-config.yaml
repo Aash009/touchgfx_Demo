@@ -3,7 +3,7 @@ repos:
     hooks:
       - id: misra-format
         name: clang-format (Allman, 4-space)
-        entry: scripts/format.sh fix
+        entry: scripts/format.sh check
         language: system
         files: \.(c|h|cpp|hpp)$
         # demo/ fixtures are deliberate violations for the self-test walkthrough
